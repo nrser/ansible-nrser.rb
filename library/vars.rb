@@ -6,6 +6,14 @@ require 'json'
 require 'shellwords'
 require 'pp'
 
+def namespace prefix, hash
+  Hash[
+    hash.map {|key, value|
+      ["#{ prefix }_#{ key }", value]
+    }
+  ]
+end
+
 def main
   input = nil
   args = nil
@@ -25,7 +33,9 @@ def main
     
     result = b.eval args['src']
     
-    unless result.is_a? Hash
+    if result.is_a? Hash
+      result = namespace(args['namespace'], result) if args['namespace']
+    else
       result = {'result' => result}
     end
 
