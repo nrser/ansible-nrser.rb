@@ -1,24 +1,10 @@
 #!/usr/bin/env ruby
-# WANT JSON
+# WANT_JSON
 # ^ i think this is something telling ansible to provide JSON args?
 
 require 'json'
 require 'shellwords'
 require 'pp'
-
-MODULE_COMPLEX_ARGS = "<<INCLUDE_ANSIBLE_MODULE_COMPLEX_ARGS>>"
-
-def parse input
-  parsed = {}
-  Shellwords.split(input).each do |word|
-    (key, value) = word.split('=', 2)
-    parsed[key] = value
-  end
-  unless MODULE_COMPLEX_ARGS.empty?
-    parsed.update JSON.load(MODULE_COMPLEX_ARGS)
-  end
-  parsed
-end
 
 def main
   input = nil
@@ -27,7 +13,7 @@ def main
 
   begin
     input = File.read ARGV[0]
-    args = parse input
+    args = JSON.load input
 
     eval <<-END
       def in_sync?
