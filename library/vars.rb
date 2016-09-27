@@ -25,10 +25,12 @@ def main
     
     b = binding
     
-    if args.key? 'vars'    
-      args['vars'].each {|k, v|
-        b.local_variable_set k, v
-      }
+    ['bind', 'vars'].each do |key|
+      if args.key? key
+        args[key].each {|k, v|
+          b.local_variable_set k, v
+        }
+      end
     end
     
     result = b.eval args['src']
