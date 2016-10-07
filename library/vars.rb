@@ -47,11 +47,9 @@ def main
     })
     
   rescue Exception => e
-    raise e
-    
     print JSON.dump({
       'failed' => true,
-      'msg' => e,
+      'msg' => e.message,
       # 'input' => input,
       # 'args' => args,
       # 'ARGV' => ARGV,
