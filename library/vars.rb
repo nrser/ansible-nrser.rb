@@ -2,9 +2,13 @@
 # WANT_JSON
 # ^ i think this is something telling ansible to provide JSON args?
 
+# stdlib
 require 'json'
 require 'shellwords'
 require 'pp'
+
+# deps
+require 'nrser'
 
 def namespace prefix, hash
   Hash[
@@ -33,7 +37,7 @@ def main
       end
     end
     
-    result = b.eval args['src']
+    result = b.eval args.fetch('src')
     
     if result.is_a? Hash
       result = namespace(args['namespace'], result) if args['namespace']
@@ -47,13 +51,30 @@ def main
     })
     
   rescue Exception => e
+    path = File.join Dir.pwd, "ansible-error.log"
+    msg = NRSER.squish <<-END
+      vars.rb failed: #{ e.message } (#{ e.class.name }).
+      See #{ path } for details.
+    END
+    
+    File.open(path, 'w') {|f|
+      f.puts "ERROR:\n\n"
+      f.puts NRSER.indent(NRSER.format_exception(e))
+      
+      f.puts "\nINPUT:\n\n"
+      f.puts NRSER.indent(input) if defined? input
+      
+      f.puts "\nARGS:\n\n"
+      f.puts NRSER.indent(args.pretty_inspect) if defined? args
+      
+      f.puts "\nRUBY:\n"
+      f.puts NRSER.indent("VERSION: #{ RUBY_VERSION }")
+      f.puts NRSER.indent("PATH: #{ RbConfig.ruby }")
+    }
+    
     print JSON.dump({
       'failed' => true,
-      'msg' => e.message,
-      # 'input' => input,
-      # 'args' => args,
-      # 'ARGV' => ARGV,
-      # 'ruby' => RUBY_VERSION,
+      'msg' => msg,
     })
   end
 end
