@@ -10,12 +10,22 @@ require 'pp'
 # deps
 require 'nrser'
 
+$warnings = []
+
 def namespace prefix, hash
   Hash[
     hash.map {|key, value|
       ["#{ prefix }_#{ key }", value]
     }
   ]
+end
+
+def warn msg, **details
+  unless details.empty?
+    
+  end
+  
+  $warnings << msg
 end
 
 def main
@@ -45,6 +55,7 @@ def main
       'ansible_facts' => {
         var_name => result,
       },
+      'warnings' => $warnings,
     })
     
   rescue Exception => e
@@ -54,9 +65,11 @@ def main
       See #{ path } for details.
     END
     
+    formatted = NRSER.format_exception(e)
+    
     File.open(path, 'w') {|f|
       f.puts "ERROR:\n\n"
-      f.puts NRSER.indent(NRSER.format_exception(e))
+      f.puts NRSER.indent(formatted)
       
       f.puts "\nINPUT:\n\n"
       f.puts NRSER.indent(input) if defined? input
@@ -72,6 +85,8 @@ def main
     print JSON.dump({
       'failed' => true,
       'msg' => msg,
+      'warnings' => $warnings,
+      'exception' => formatted,
     })
   end
 end
