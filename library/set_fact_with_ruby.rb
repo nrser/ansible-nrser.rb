@@ -41,8 +41,11 @@ def main
     
     ['bind', 'vars'].each do |key|
       if args.key? key
-        warn "#{ key }: #{ args[key].inspect }"
         args[key].each {|k, v|
+          # Ansible sends null/None values as empty strings, so convert those
+          # to nil. This does prevent passing the empty string as a value, but
+          # it seems like a more reasonable / intuitive way to treat it.
+          v = nil if v == ''
           b.local_variable_set k, v
         }
       end
