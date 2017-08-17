@@ -6,6 +6,16 @@
 # WANT_JSON
 # ^ tell Ansible to provide args as JSON encoded file.
 
+# init bundler in dev env
+if ENV['QB_DEV_ENV']
+  ENV.each {|k, v|
+    if k.start_with? 'QB_DEV_ENV_'
+      ENV[k.sub('QB_DEV_ENV_', '')] = v
+    end
+  }
+  require 'bundler/setup'
+end
+
 # stdlib
 require 'json'
 require 'shellwords'
