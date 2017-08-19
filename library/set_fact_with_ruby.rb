@@ -21,6 +21,11 @@ require 'json'
 require 'shellwords'
 require 'pp'
 
+# We originally used the name 'vars', but switched to prefer 'bind'.
+# However, we still support either, but doesn't make sense to provide
+# both.
+BIND_ARG_NAMES = ['bind', 'vars']
+
 # Global var to append warning messages to.
 $warnings = []
 
@@ -45,11 +50,14 @@ def main
     
     args = JSON.load input
     
-    var_name = args.fetch 'var_name'
-    
     b = binding
     
-    ['bind', 'vars'].each do |key|
+    if BIND_ARG_NAMES.count {|name| args.key? name } > 1
+      raise ArgumentError,
+            "Please provide exactly one of args #{ BIND_ARG_NAMES.join ', ' }"
+    end
+    
+    BIND_ARG_NAMES.each do |key|
       if args.key? key
         args[key].each {|k, v|
           # Ansible sends null/None values as empty strings, so convert those
@@ -62,12 +70,23 @@ def main
     end
     
     result = b.eval args.fetch('src')
+    
+    ansible_facts = if args.key? 'var_name'
+      # We received a var_name, so we consider the result to be it's value
+      {args['var_name'] => result}
+    else
+      # The result should be a hash of variable names to value to set
+      unless result.is_a? Hash
+        raise "When var_name arg is not provided, result of evaluation must "
+              "be a Hash of variable names to value to set. " +
+              "Found #{ result.inspect }"
+      end
+      result
+    end
 
     print JSON.dump({
       'changed' => false,
-      'ansible_facts' => {
-        var_name => result,
-      },
+      'ansible_facts' => ansible_facts,
       'warnings' => $warnings,
     })
     
