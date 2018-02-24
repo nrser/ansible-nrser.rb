@@ -37,7 +37,16 @@ def main
       end
     end
     
-    result = b.eval args.fetch('src')
+    if args['src'] && args['file']
+      raise "Don't provide both src and file!"
+    end
+    
+    if !args['src'] && !args['file']
+      raise "Must provide one of src or file!"
+    end
+    
+    src = args['src'] || File.read( args['file'] )
+    result = b.eval src
     
     if result.is_a? Hash
       result = namespace(args['namespace'], result) if args['namespace']
